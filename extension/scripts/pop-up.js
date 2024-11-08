@@ -136,28 +136,92 @@ const displayStreamerStatus = (streams) => {
   });
 };
 
-document.addEventListener('DOMContentLoaded', () => {
+/**
+ * @typedef Settings
+ * @property {boolean} hideOffline
+ * @property {boolean} hidePreviews
+ * @property {boolean} hideStreamersOnlineCount
+ * @property {string[]} twitchStreams
+ */
+/**
+ * @param {function (Settings)} callback
+ */
+const getAllSettings = (callback) => {
   chrome.storage.sync.get(
-    [
-      'hideOffline',
-      'hidePreviews',
-      'hideStreamersOnlineCount',
-      'twitchStreams',
-    ],
-    (storage) => {
-      hideOffline = storage.hideOffline;
-      document.getElementById('hideOffline').checked = !hideOffline;
+      [
+        'hideOffline',
+        'hidePreviews',
+        'hideStreamersOnlineCount',
+        'twitchStreams',
+      ],
+      callback
+  )
+}
 
-      hidePreviews = storage.hidePreviews;
-      document.getElementById('hidePreviews').checked = !hidePreviews;
+const exportSettings = () => {
+  getAllSettings(storage => {
+    let data = JSON.stringify(storage);
+    console.log("got settings:");
+    console.log(data);
+    const filename = "Twitch-Stream-Notifier.json";
 
-      hideStreamersOnlineCount = storage.hideStreamersOnlineCount;
-      document.getElementById('hideStreamersOnlineCount').checked =
-        !hideStreamersOnlineCount;
+    let btn = document.createElement('a');
+    btn.setAttribute('href', `data:text/plain;charset=utf-8,${encodeURIComponent(data)}`);
+    btn.setAttribute('download', filename);
+    btn.style.display = 'none';
+    document.body.appendChild(btn);
+    btn.click();
+    document.body.removeChild(btn);
+  });
+};
 
-      fetchStreamerStatus(storage);
+const importSettings = () => {
+  let input = document.createElement('input');
+  input.setAttribute('type', 'file');
+  input.setAttribute('accept', 'application/json');
+  input.style.display = 'none';
+
+  input.onchange = () => {
+    if(input.files.length <= 0) {
+      console.log("Import was aborted (received no file)");
+      return;
     }
-  );
+
+    input.files[0].text().then((dataStr) => {
+      let data = JSON.parse(dataStr);
+      chrome.storage.sync.set(
+          data,
+          () => {
+            reapplySettings(data);
+          }
+      );
+    })
+  }
+
+  document.body.appendChild(input);
+  input.click();
+  document.body.removeChild(input);
+};
+
+const reapplySettings = (storage) => {
+  hideOffline = storage.hideOffline;
+  document.getElementById('hideOffline').checked = !hideOffline;
+
+  hidePreviews = storage.hidePreviews;
+  document.getElementById('hidePreviews').checked = !hidePreviews;
+
+  hideStreamersOnlineCount = storage.hideStreamersOnlineCount;
+  document.getElementById('hideStreamersOnlineCount').checked =
+      !hideStreamersOnlineCount;
+
+  fetchStreamerStatus(storage);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  getAllSettings(reapplySettings);
+
+  document.getElementById('export-button').addEventListener('click', exportSettings);
+  document.getElementById('import-button').addEventListener('click', importSettings);
 
   document.getElementById('addForm').addEventListener('submit', (evt) => {
     evt.preventDefault();

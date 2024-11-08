@@ -46,6 +46,36 @@ body {
   height: 60px;
 }
 
+.banner-menu-wrapper {
+  position: relative;
+  margin-left: auto;
+  align-self: center;
+}
+
+.banner-menu-wrapper:hover > .banner-menu {
+  display: flex;
+}
+
+.banner-menu {
+  display: none;
+  position: absolute;
+  right: 0;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  background: #333;
+  white-space: nowrap;
+  z-index: 99;
+}
+
+.menu-item {
+  padding: 5px;
+  cursor: pointer;
+}
+
+.menu-item:hover {
+  background: #666;
+}
+
 .footer {
   border-top: 1px solid #ccc;
   padding-top: 15px;
